@@ -51,7 +51,7 @@ def delta_u_from_components(w0, d0, i0, w1, d1, i1, alpha):
 # ---------- UI ----------
 st.title("Expected Value of a Career Pivot")
 st.markdown(r"""
-_Originally inspired by [this blog post](https://danmackinlay.com//notebook/ai_safety_career_calibration)._
+_Originally inspired by [this blog post](https://danmackinlay.com//notebook/ai_safety_career_calibration). Source code at [danmackinlay/career_pivot_calculator](https://github.com/danmackinlay/career_pivot_calculator)._
 
 You want to know whether to stay in your current job or take a sabbatical to pivot into a role that might have higher impact (e.g., AI safety research, policy, or advocacy).
 You expect to apply to many such roles over a limited runway (e.g., 6 months), and each application has some small probability p of success. If you succeed, you get a new job with different pay, donations, and impact. If you fail, you return to your baseline job.
