@@ -1,18 +1,11 @@
 # Career Pivot Calculator 📊
 
-A Streamlit web application for analyzing and visualizing career transition decisions using data-driven insights.
-
-## Features
-
-- **Salary Comparison**: Compare current and expected post-pivot salaries
-- **Growth Projection**: Visualize 10-year career trajectory for both paths
-- **Statistical Analysis**: Calculate break-even points and opportunity costs
-- **Risk Assessment**: Probability distribution visualization for salary outcomes
-- **Interactive Dashboard**: Adjust parameters in real-time to explore different scenarios
+A Streamlit web application for analyzing and visualizing career transition decisions.
+Originally inspired by [this blog post](https://danmackinlay.com//notebook/ai_safety_career_calibration).
 
 ## Live Demo
 
-🚀 Try the app on Streamlit Community Cloud: [Coming Soon]
+🚀 Try the app on [Streamlit Community Cloud](https://career-pivot-calculator.streamlit.app).
 
 ## Local Development
 

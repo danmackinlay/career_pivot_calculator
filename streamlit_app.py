@@ -10,7 +10,7 @@ st.set_page_config(page_title="Pivot EV Calculator", layout="wide")
 def ev_exact(p, delta_u, r, ell, T, c):
     """
     Expected value over horizon T (k$ donation-equivalent) as a function of per-app success prob p.
-    Stopped Poisson approx: offer rate = r*p, runway = ell. Vectorized in p.
+    Stopped Poisson model: offer rate = r*p, runway = ell. Vectorized in p.
     """
     p = np.asarray(p, dtype=float)
     lamL = r * p * ell
@@ -48,7 +48,6 @@ with st.sidebar:
     c = st.number_input("Runway cost rate (k$/y, c)", min_value=0.0, max_value=200.0, value=25.0, step=1.0)
     delta_u_text = st.text_input("Δu values (k$/y), comma-separated", value="10,22,35")
     p_max = st.slider("Max per-application p shown", min_value=0.02, max_value=0.20, value=0.05, step=0.01)
-    grid_pts = st.select_slider("Resolution", options=[200, 400, 800, 1200], value=600)
 
 # Parse Δu list safely
 try:
@@ -60,7 +59,7 @@ except Exception:
     st.stop()
 
 # ---------- Compute ----------
-p_grid = np.linspace(0.0, p_max, int(grid_pts))
+p_grid = np.linspace(0.0, p_max, 1000)
 fig = go.Figure()
 
 for du in delta_u_list:
