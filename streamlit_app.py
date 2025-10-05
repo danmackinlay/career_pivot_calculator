@@ -3,7 +3,7 @@ import numpy as np
 import streamlit as st
 import plotly.graph_objects as go
 
-st.set_page_config(page_title="Pivot EV Calculator (Discounted)", layout="wide")
+st.set_page_config(page_title="Pivot EV Calculator", layout="wide")
 
 
 # ---------- Math ----------
@@ -49,11 +49,17 @@ def delta_u_from_components(w0, d0, i0, w1, d1, i1, alpha):
 
 
 # ---------- UI ----------
-st.title("Expected Value of an AI‑Safety Pivot (Discounted)")
-st.caption(
-    "Stopped‑Poisson offers (rate = r·p), capped runway ℓ, continuous discounting at rate ρ. "
-    "Y‑axis is present value (k$ donation‑equivalent)."
-)
+st.title("Expected Value of an AI‑Safety Pivot")
+st.markdown(r"""
+You want to know whether to stay in your current job or take a sabbatical to pivot into a role that might have higher impact (e.g., AI safety research, policy, or advocacy). You expect to apply to many such roles over a limited runway (e.g., 6 months), and each application has some small probability p of success. If you succeed, you get a new job with different pay, donations, and impact. If you fail, you return to your baseline job.
+How might you calculate that?
+By estimating the *expected value* (EV) of the pivot gamble!.
+
+You apply for jobs at a rate of $r$ per year, and your runway is $\ell$ years (e.g., 0.5 for 6 months). You discount future utility at a continuous rate $\rho$ per year (e.g., 1/3 for ~3 years half-life if the world’s problems seem _urgent_). Your runway burn rate is $c$ k$/year (donation-equivalent, i.e., including lost donations and impact).
+
+Y‑axis is present value (k$ donation‑equivalent) of your sabbatical pivot gamble.
+Originally inspired by [this blog post](https://danmackinlay.com//notebook/ai_safety_career_calibration).
+""")
 
 with st.sidebar:
     st.header("Opportunity process & discounting")
@@ -89,9 +95,9 @@ with st.sidebar:
     )
 
     st.divider()
-    st.header("Utility model (compose Δu from components)")
+    st.header("Utility model")
     alpha = st.number_input(
-        "Weight on (impact + donations) vs personal $ (α)",
+        "Weight of (impact + donations) vs personal $ (α)",
         min_value=0.0,
         max_value=10.0,
         value=1.0,
@@ -143,12 +149,8 @@ with st.sidebar:
         "Extra Δu values (comma‑separated, optional)", value=""
     )
 
-    st.divider()
-    st.subheader("p‑axis (log)")
     p_min = 10.0**-3  # start at 0.1%
-    points_per_decade = st.slider(
-        "Resolution (points/decade)", min_value=50, max_value=400, value=200, step=10
-    )
+    points_per_decade = 200
 
 # Compose Δu from components
 delta_u_base, u0, u1 = delta_u_from_components(w0, d0, i0, w1, d1, i1, alpha)
@@ -227,7 +229,7 @@ fig.update_layout(
         minor=dict(showgrid=True),
     ),
     yaxis_title="ΔEV (present value, k$ donation‑equivalent)",
-    title=f"EV vs p (discounted) — r={r:.1f}/y, ℓ={ell:.2f}y, ρ={rho:.3f}/y, c={c:.1f}k$/y",
+    title=f"EV — r={r:.1f}/y, ℓ={ell:.2f}y, ρ={rho:.3f}/y, c={c:.1f}k$/y",
     legend_title="Scenarios",
     margin=dict(l=40, r=20, t=60, b=40),
 )
@@ -272,14 +274,13 @@ else:
 # ---------- Explanation ----------
 with st.expander("Model details"):
     st.markdown(
-        """
-- **Discounted private EV**:
-  \n\\[
-  \\Delta \\mathrm{EV}_\\rho(p)
-  = \\frac{1-e^{-(rp+\\rho)\\ell}}{rp+\\rho}\\Big(\\frac{\\Delta u\\, rp}{\\rho}-c\\Big).
-  \\]
-- **Break‑even**: if \\(\\Delta u>0\\), \\(p^*=\\tfrac{c\\,\\rho}{r\\,\\Delta u}\\), and \\(q^*=1-e^{-rp^*\\ell}\\).
-- **Utility composition**: \\(\\Delta u=(w_1+\\alpha(i_1+d_1))-(w_0+\\alpha(i_0+d_0))\\).
+        r"""
+- **Discounted private Expected Val**:
+  $$
+  \Delta \mathrm{EV}_\rho(p)
+  = \frac{1-e^{-(rp+\rho)\ell}}{rp+\rho}\Big(\frac{\Delta u\, rp}{\rho}-c\Big).
+  $$
+- **Break‑even**: if $\Delta u>0$, $p^*=\tfrac{c\,\rho}{r\,\Delta u}$, and $q^*=1-e^{-rp^*\ell}$.
+- **Utility composition**: $\Delta u=(w_1+\alpha(i_1+d_1))-(w_0+\alpha(i_0+d_0))$.
 - Units are **k$ donation‑equivalent** per year and present value.
-        """
-    )
+ """)
