@@ -1,4 +1,4 @@
-# streamlit_app.py — EV of an AI-safety pivot (discounted, stopped Poisson) with log-scale p ∈ [p_min, 1]
+# streamlit_app.py — EV of an career pivot versus probability of success with log-scale p ∈ [p_min, 1]
 import numpy as np
 import streamlit as st
 import plotly.graph_objects as go
@@ -49,16 +49,20 @@ def delta_u_from_components(w0, d0, i0, w1, d1, i1, alpha):
 
 
 # ---------- UI ----------
-st.title("Expected Value of an AI‑Safety Pivot")
+st.title("Expected Value of a Career Pivot")
 st.markdown(r"""
-You want to know whether to stay in your current job or take a sabbatical to pivot into a role that might have higher impact (e.g., AI safety research, policy, or advocacy). You expect to apply to many such roles over a limited runway (e.g., 6 months), and each application has some small probability p of success. If you succeed, you get a new job with different pay, donations, and impact. If you fail, you return to your baseline job.
+_Originally inspired by [this blog post](https://danmackinlay.com//notebook/ai_safety_career_calibration)._
+
+You want to know whether to stay in your current job or take a sabbatical to pivot into a role that might have higher impact (e.g., AI safety research, policy, or advocacy).
+You expect to apply to many such roles over a limited runway (e.g., 6 months), and each application has some small probability p of success. If you succeed, you get a new job with different pay, donations, and impact. If you fail, you return to your baseline job.
 How might you calculate that?
 By estimating the *expected value* (EV) of the pivot gamble!.
 
-You apply for jobs at a rate of $r$ per year, and your runway is $\ell$ years (e.g., 0.5 for 6 months). You discount future utility at a continuous rate $\rho$ per year (e.g., 1/3 for ~3 years half-life if the world’s problems seem _urgent_). Your runway burn rate is $c$ k$/year (donation-equivalent, i.e., including lost donations and impact).
+You apply for jobs at a rate of $r$ per year, and your maximum runway is $\ell$ years (e.g., 0.5 for 6 months).
+You discount future utility at a continuous rate $\rho$ per year (e.g., 1/3 for ~3 years half-life if the world’s problems seem _urgent_).
+Your runway burn rate is $c$ k$/year (donation-equivalent, i.e., including lost donations and impact).
 
 Y‑axis is present value (k$ donation‑equivalent) of your sabbatical pivot gamble.
-Originally inspired by [this blog post](https://danmackinlay.com//notebook/ai_safety_career_calibration).
 """)
 
 with st.sidebar:
@@ -82,7 +86,7 @@ with st.sidebar:
         "Discount rate (per year, ρ)",
         min_value=0.005,
         max_value=2.0,
-        value=1.0 / 3.0,
+        value=1.0 / 10.0,
         step=0.01,
         format="%.3f",
     )
@@ -142,34 +146,14 @@ with st.sidebar:
         step=5.0,
     )
 
-    st.divider()
-    st.header("Optional scenarios")
-    st.caption("Add extra Δu values (k$/y) to plot alongside the Δu from components.")
-    delta_u_text = st.text_input(
-        "Extra Δu values (comma‑separated, optional)", value=""
-    )
-
     p_min = 10.0**-3  # start at 0.1%
     points_per_decade = 200
 
 # Compose Δu from components
 delta_u_base, u0, u1 = delta_u_from_components(w0, d0, i0, w1, d1, i1, alpha)
 
-# Parse any extra Δu scenarios
-extra_dus = []
-if delta_u_text.strip():
-    try:
-        extra_dus = [float(s.strip()) for s in delta_u_text.split(",") if s.strip()]
-    except Exception:
-        st.error(
-            "Could not parse extra Δu values. Use a comma‑separated list like: 10,22,35"
-        )
-        extra_dus = []
-
-# Build the list of scenarios (base first)
-scenarios = [(f"Δu (from components) = {delta_u_base:.1f}k/y", delta_u_base)]
-for du in extra_dus:
-    scenarios.append((f"Δu = {du:.1f}k/y (extra)", du))
+# Single scenario label
+label = f"Δu = {delta_u_base:.1f}k/y"
 
 # ---------- Top-line metrics ----------
 m1, m2, m3 = st.columns(3)
@@ -185,35 +169,35 @@ p_grid = np.geomspace(p_min, 1.0, npts)
 # ---------- Plot ----------
 fig = go.Figure()
 
-for label, du in scenarios:
-    ev_vals = ev_discounted(p_grid, du, r, ell, rho, c)
-    # Closed-form break-even if Δu>0
-    p_star = p_star_discounted(r, rho, c, du)
-    name = label
-    if np.isfinite(p_star) and (p_min <= p_star <= 1.0):
-        q_star = q_over_runway(p_star, r, ell)
-        name += f"  (p*≈{100 * p_star:.2f}%, q*≈{100 * q_star:.1f}%)"
-        fig.add_trace(
-            go.Scatter(
-                x=[p_star],
-                y=[0.0],
-                mode="markers",
-                marker=dict(size=8),
-                name=f"break-even ({label})",
-                hovertemplate=f"{label}<br>p*={100 * p_star:.2f}%<br>"
-                f"q*={100 * q_star:.1f}%<extra></extra>",
-            )
-        )
+du = delta_u_base
+ev_vals = ev_discounted(p_grid, du, r, ell, rho, c)
+p_star = p_star_discounted(r, rho, c, du)
 
+name = label
+if np.isfinite(p_star) and (p_min <= p_star <= 1.0):
+    q_star = q_over_runway(p_star, r, ell)
+    name += f"  (p*≈{100 * p_star:.2f}%, q*≈{100 * q_star:.1f}%)"
     fig.add_trace(
         go.Scatter(
-            x=p_grid,
-            y=ev_vals,
-            mode="lines",
-            name=name,
-            hovertemplate="p=%{x:.6f} (=%{x:.2%})<br>ΔEV(PV)=%{y:.2f} k$<extra></extra>",
+            x=[p_star],
+            y=[0.0],
+            mode="markers",
+            marker=dict(size=8),
+            name="break-even",
+            hovertemplate=f"p*={100 * p_star:.2f}%<br>"
+            f"q*={100 * q_star:.1f}%<extra></extra>",
         )
     )
+
+fig.add_trace(
+    go.Scatter(
+        x=p_grid,
+        y=ev_vals,
+        mode="lines",
+        name=name,
+        hovertemplate="p=%{x:.6f} (=%{x:.2%})<br>ΔEV(PV)=%{y:.2f} k$<extra></extra>",
+    )
+)
 
 fig.add_hline(y=0.0, line_dash="dash")
 
@@ -229,8 +213,8 @@ fig.update_layout(
         minor=dict(showgrid=True),
     ),
     yaxis_title="ΔEV (present value, k$ donation‑equivalent)",
-    title=f"EV — r={r:.1f}/y, ℓ={ell:.2f}y, ρ={rho:.3f}/y, c={c:.1f}k$/y",
-    legend_title="Scenarios",
+    title=f"Discounted EV vs p — r={r:.1f}/y, ℓ={ell:.2f}y, ρ={rho:.3f}/y, c={c:.1f}k$/y",
+    showlegend=True,
     margin=dict(l=40, r=20, t=60, b=40),
 )
 
@@ -238,27 +222,20 @@ st.plotly_chart(fig, use_container_width=True)
 
 # ---------- Anchor points ----------
 st.subheader("Anchor points")
-focal_idx = st.selectbox(
-    "Choose scenario for table:",
-    options=list(range(len(scenarios))),
-    format_func=lambda i: scenarios[i][0],
-    index=0,
-)
-focal_label, focal_du = scenarios[focal_idx]
-
 cols = st.columns(3)
-for col, pct in zip(cols, [0.001, 0.01, 0.05]):  # 0.1%, 1%, 5%
-    with col:
-        val = float(ev_discounted(np.array([pct]), focal_du, r, ell, rho, c))
-        st.metric(label=f"ΔEV at p={pct:.1%}", value=f"{val:+.2f} k$")
+pcts = [0.001, 0.01, 0.05]  # 0.1%, 1%, 5%
 
-p_star = p_star_discounted(r, rho, c, focal_du)
+for col, pct in zip(cols, pcts):
+    val = ev_discounted(pct, delta_u_base, r, ell, rho, c).item()
+    col.metric(f"ΔEV at p={pct:.1%}", f"{val:+.2f} k$")
+
 if np.isfinite(p_star):
     q_star = q_over_runway(p_star, r, ell)
     if p_min <= p_star <= 1.0:
         st.info(
-            f"Break‑even for **{focal_label}** → p* ≈ **{100 * p_star:.2f}%** per app; "
-            f"q* over runway ≈ **{100 * q_star:.1f}%**."
+            f"Break‑even → p* ≈ **{100 * p_star:.2f}%** per app; "
+            f"q* over runway ≈ **{100 * q_star:.1f}%** "
+            f"(Δu = {delta_u_base:.1f} k$/y)."
         )
     else:
         st.warning(
@@ -267,7 +244,7 @@ if np.isfinite(p_star):
         )
 else:
     st.warning(
-        f"No break‑even for **{focal_label}** (Δu ≤ 0 ⇒ EV stays ≤ 0 for all p). "
+        f"No break‑even (Δu ≤ 0 ⇒ EV stays ≤ 0 for all p). "
         f"Increase Δu, reduce c or ρ, or increase r."
     )
 
